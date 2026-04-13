@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Recommendations - MorganCS Assist</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="page">
+
+        <header class="navbar">
+            <div class="brand">
+                <div class="brand-text">
+                    <h1>MorganCS <span>Assist</span></h1>
+                    <p>AI Academic Assistant for Computer Science Students</p>
+                </div>
+            </div>
+
+            <nav class="nav-links">
+                <a href="Outline.html">Home</a>
+                <a href="#">About</a>
+                <a href="#">Resources</a>
+                <a href="#">Contact</a>
+            </nav>
+
+            <button class="start-btn" onclick="goHome()">Back to Home</button>
+        </header>
+
+        <section class="chat-page">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h2>Course <span>Recommendations</span></h2>
+                    <p>Get personalized course recommendations tailored to your interests and career goals</p>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message bot-message">
+                        <div class="message-content">
+                            Welcome to Course Recommendations! I'm here to help you find the best courses for your
+                            goals. Ask me anything about courses, prerequisites, or recommendations!
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <div class="search-box">
+                        <input type="text" id="userInput" placeholder="Ask about courses...">
+                        <button id="sendBtn">Ask AI</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        function goHome() {
+            window.location.href = 'Outline.html';
+        }
+
+        function addMessage(text, isUser) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isUser ? 'message user-message' : 'message bot-message';
+            messageDiv.innerHTML = `<div class="message-content">${text}</div>`;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function initFromQuery() {
+            const params = new URLSearchParams(window.location.search);
+            const q = params.get('q');
+            if (q) {
+                addMessage(q, true);
+                setTimeout(() => {
+                    addMessage('I received your question about courses. AI response will appear here once integrated.', false);
+                }, 400);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initFromQuery();
+            const sendBtn = document.getElementById('sendBtn');
+            const userInput = document.getElementById('userInput');
+
+            if (sendBtn && userInput) {
+                sendBtn.addEventListener('click', function () {
+                    const question = userInput.value.trim();
+                    if (question) {
+                        addMessage(question, true);
+                        userInput.value = '';
+
+                        // TODO: Connect your AI agent here
+                        // Replace this with actual API call to your chatbot
+                        setTimeout(() => {
+                            addMessage('I received your question about courses. AI response will appear here once integrated.', false);
+                        }, 500);
+                    }
+                });
+
+                userInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        const question = this.value.trim();
+                        if (question) {
+                            addMessage(question, true);
+                            this.value = '';
+
+                            // TODO: Connect your AI agent here
+                            setTimeout(() => {
+                                addMessage('I received your question about courses. AI response will appear here once integrated.', false);
+                            }, 500);
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+
+</body>
+
+</html>
