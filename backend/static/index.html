@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MorganCS Assist</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ── Chat section ── */
+        .chat-section {
+            background-color: #0b1836;
+            padding: 0 50px 60px 50px;
+            display: none;
+        }
+        .chat-section.visible { display: block; }
+
+        .chat-window {
+            background: #10214a;
+            border-radius: 16px;
+            overflow: hidden;
+            max-width: 860px;
+            margin: 0 auto;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        }
+        .chat-topbar {
+            background: #0d1b3d;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .chat-dot { width: 10px; height: 10px; background: #4ade80; border-radius: 50%; animation: blink 2s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+        .chat-topbar-title { color: white; font-size: 15px; font-weight: 700; }
+        .chat-topbar-sub { color: #94a3b8; font-size: 12px; }
+
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .chat-messages::-webkit-scrollbar { width: 6px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #2a3f6f; border-radius: 3px; }
+
+        .msg { display: flex; gap: 12px; max-width: 80%; }
+        .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+        .av {
+            width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700; flex-shrink: 0;
+        }
+        .msg.bot .av  { background: #f39a2d; color: #0d1b3d; }
+        .msg.user .av { background: #2a3f6f; color: white; }
+
+        .bubble {
+            padding: 12px 16px; border-radius: 16px;
+            font-size: 14px; line-height: 1.65;
+            white-space: pre-wrap; word-break: break-word;
+        }
+        .msg.bot  .bubble { background: #1a2f5a; color: #e2e8f0; border-bottom-left-radius: 4px; }
+        .msg.user .bubble { background: #ef9227; color: white; border-bottom-right-radius: 4px; }
+        .agent-tag { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+        .typing-wrap { display: flex; gap: 4px; padding: 14px 16px; background: #1a2f5a; border-radius: 16px; border-bottom-left-radius: 4px; width: fit-content; }
+        .tdot { width: 8px; height: 8px; background: #94a3b8; border-radius: 50%; animation: tbounce 1.4s infinite; }
+        .tdot:nth-child(2){animation-delay:.2s} .tdot:nth-child(3){animation-delay:.4s}
+        @keyframes tbounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-8px)} }
+    </style>
+</head>
+<body>
+
+<div class="page">
+
+    <!-- Navbar -->
+    <header class="navbar">
+        <div class="brand">
+            <div class="brand-text">
+                <h1>MorganCS <span>Assist</span></h1>
+                <p>AI Academic Assistant for Computer Science Students</p>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <a href="#">Home</a>
+            <a href="#">About</a>
+            <a href="#">Resources</a>
+            <a href="#">Contact</a>
+        </nav>
+        <button class="start-btn" onclick="focusSearch()">Get Started</button>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="overlay"></div>
+        <div class="hero-content">
+            <div class="left-side">
+                <h2>Welcome to</h2>
+                <h1>MorganCS <span>Assist</span></h1>
+                <p class="sub-text">AI Academic Assistant for Computer Science Students</p>
+                <h3>Welcome to MorganCS Assist</h3>
+                <p class="main-text">Find Your Path in Computer Science with AI Guidance</p>
+                <div class="search-box">
+                    <input type="text" id="heroInput" placeholder="Ask any question..." onkeydown="if(event.key==='Enter') sendMessage()">
+                    <button onclick="sendMessage()" id="askBtn">Ask AI</button>
+                </div>
+            </div>
+            <div class="right-side">
+                <div class="message-box" id="heroBubble">
+                    <p id="heroBubbleText">Hello! How can I help you with your computer science courses?</p>
+                    <div class="thinking" id="thinkingDots">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+                <img src="images/robot.png" alt="Robot" class="robot">
+            </div>
+        </div>
+    </section>
+
+    <!-- Chat window (appears after first message) -->
+    <section class="chat-section" id="chatSection">
+        <div class="chat-window">
+            <div class="chat-topbar">
+                <div class="chat-dot"></div>
+                <div>
+                    <div class="chat-topbar-title">MorganCS AI Assistant</div>
+                    <div class="chat-topbar-sub">Online · Powered by Groq &amp; Llama · Morgan State CS Catalog</div>
+                </div>
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+        </div>
+    </section>
+
+    <!-- Topics -->
+    <section class="topics">
+        <h2>Popular Help Topics</h2>
+        <div class="card-container">
+            <div class="card" onclick="ask('What courses do you recommend for a freshman CS student at Morgan State?')">
+                <img src="images/course.png" alt="Course">
+                <h3>Course<br>Recommendations</h3>
+            </div>
+            <div class="card" onclick="ask('What career paths are available with a CS degree from Morgan State?')">
+                <img src="images/carrier.png" alt="Career">
+                <h3>Career<br>Guidance</h3>
+            </div>
+            <div class="card" onclick="ask('Where can I find tutoring services for CS courses at Morgan State?')">
+                <img src="images/tutoring.png" alt="Tutoring">
+                <h3>Tutoring<br>Resources</h3>
+            </div>
+            <div class="card" onclick="ask('How do I plan my academic schedule to graduate on time from the CS program?')">
+                <img src="images/academic.png" alt="Academic">
+                <h3>Academic<br>Planning</h3>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+    const userId = 'user-' + Math.random().toString(36).substr(2, 9);
+    let chatStarted = false;
+
+    function focusSearch() {
+        document.getElementById('heroInput').focus();
+    }
+
+    function ask(question) {
+        document.getElementById('heroInput').value = question;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(sendMessage, 400);
+    }
+
+    function appendMessage(text, isUser, agentTag) {
+        const box = document.getElementById('chatMessages');
+        const wrap = document.createElement('div');
+        wrap.className = 'msg ' + (isUser ? 'user' : 'bot');
+
+        const av = document.createElement('div');
+        av.className = 'av';
+        av.textContent = isUser ? 'U' : 'M';
+
+        const inner = document.createElement('div');
+        const bub = document.createElement('div');
+        bub.className = 'bubble';
+        bub.textContent = text;
+        inner.appendChild(bub);
+
+        if (agentTag) {
+            const tag = document.createElement('div');
+            tag.className = 'agent-tag';
+            tag.textContent = agentTag;
+            inner.appendChild(tag);
+        }
+
+        wrap.appendChild(av);
+        wrap.appendChild(inner);
+        box.appendChild(wrap);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function showTyping() {
+        const box = document.getElementById('chatMessages');
+        const wrap = document.createElement('div');
+        wrap.className = 'msg bot';
+        wrap.id = 'typing';
+        const av = document.createElement('div');
+        av.className = 'av'; av.textContent = 'M';
+        const tw = document.createElement('div');
+        tw.className = 'typing-wrap';
+        tw.innerHTML = '<div class="tdot"></div><div class="tdot"></div><div class="tdot"></div>';
+        wrap.appendChild(av); wrap.appendChild(tw);
+        box.appendChild(wrap);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function hideTyping() {
+        const el = document.getElementById('typing');
+        if (el) el.remove();
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('heroInput');
+        const btn   = document.getElementById('askBtn');
+        const text  = input.value.trim();
+        if (!text) return;
+
+        input.value = '';
+        btn.disabled = true;
+        btn.textContent = '...';
+
+        if (!chatStarted) {
+            chatStarted = true;
+            document.getElementById('chatSection').classList.add('visible');
+            document.getElementById('thinkingDots').style.display = 'none';
+        }
+
+        appendMessage(text, true);
+        showTyping();
+        document.getElementById('chatSection').scrollIntoView({ behavior: 'smooth' });
+
+        try {
+            const res  = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, userId })
+            });
+            const data = await res.json();
+            hideTyping();
+
+            if (data.reply) {
+                appendMessage(data.reply, false, data.agent ? '· ' + data.agent : '· MorganCS AI');
+                const preview = data.reply.length > 80 ? data.reply.substring(0, 80) + '...' : data.reply;
+                document.getElementById('heroBubbleText').textContent = preview;
+            } else if (data.error) {
+                appendMessage('Error: ' + data.error, false);
+            }
+        } catch (err) {
+            hideTyping();
+            appendMessage('Could not reach the server. Make sure Flask is running on port 5001.', false);
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Ask AI';
+        input.focus();
+    }
+</script>
+
+</body>
+</html>
