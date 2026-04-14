@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MorganCS Assist — AI Academic Assistant</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .backend-banner {
+            background: rgba(245,155,35,0.1);
+            border-bottom: 1px solid rgba(245,155,35,0.25);
+            padding: 10px 64px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #a8bdd8;
+        }
+        .backend-banner.hidden { display: none; }
+        .backend-banner-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #f59b23;
+            animation: blink 1.2s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        .backend-banner-dot.green { background: #22c55e; animation: none; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     PROFILE MODAL
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="profileModal">
+    <div class="modal">
+
+        <!-- Header -->
+        <div class="modal-header">
+            <div class="modal-header-icon">&#127891;</div>
+            <div class="modal-header-text">
+                <h2>My Student Profile</h2>
+                <p class="modal-sub">The AI tailors every answer to your year, courses, and goals.</p>
+            </div>
+            <button class="modal-close" onclick="closeProfile()">&#x2715;</button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body">
+
+            <!-- Row 1: Name + Year -->
+            <div class="form-grid-2">
+                <div class="form-row">
+                    <label>Your Name</label>
+                    <input type="text" id="pName" placeholder="e.g. Alex Johnson">
+                </div>
+                <div class="form-row">
+                    <label>Class Year</label>
+                    <select id="pYear">
+                        <option value="">Select year</option>
+                        <option>Freshman</option>
+                        <option>Sophomore</option>
+                        <option>Junior</option>
+                        <option>Senior</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 2: GPA + Courses -->
+            <div class="form-grid-2">
+                <div class="form-row">
+                    <label>Current GPA <span class="label-opt">optional</span></label>
+                    <input type="number" id="pGpa" placeholder="e.g. 3.2" min="0" max="4" step="0.1">
+                </div>
+                <div class="form-row">
+                    <label>Completed Courses <span class="label-opt">optional</span></label>
+                    <input type="text" id="pCourses" placeholder="COSC 111, COSC 112...">
+                </div>
+            </div>
+
+            <!-- Help areas -->
+            <div class="form-row">
+                <label>What do you need help with most?</label>
+                <div class="checkbox-group">
+                    <label class="chip"><input type="checkbox" value="Academic Advising"><span>&#127979; Academic Advising</span></label>
+                    <label class="chip"><input type="checkbox" value="Programming & Coding"><span>&#128187; Programming &amp; Coding</span></label>
+                    <label class="chip"><input type="checkbox" value="Study Skills"><span>&#128218; Study Skills</span></label>
+                    <label class="chip"><input type="checkbox" value="Course Planning"><span>&#128203; Course Planning</span></label>
+                    <label class="chip"><input type="checkbox" value="Campus Resources"><span>&#127968; Campus Resources</span></label>
+                    <label class="chip"><input type="checkbox" value="Career Guidance"><span>&#128188; Career Guidance</span></label>
+                </div>
+            </div>
+
+            <!-- Goals -->
+            <div class="form-row">
+                <label>Goals or Anything Else <span class="label-opt">optional</span></label>
+                <textarea id="pGoals" placeholder="e.g. I want to graduate on time, struggling with data structures, looking for internships..."></textarea>
+            </div>
+
+            <!-- Documents divider -->
+            <div class="form-section-divider">
+                <span>Upload Documents <span class="label-opt">optional &middot; PDF only</span></span>
+            </div>
+
+            <div class="upload-grid">
+
+                <!-- Transcript -->
+                <div class="upload-area" id="transcriptArea"
+                     onclick="document.getElementById('transcriptFile').click()"
+                     ondragover="handleDragOver(event)"
+                     ondrop="handleDrop(event,'transcript')">
+                    <input type="file" id="transcriptFile" accept=".pdf" style="display:none"
+                           onchange="handleUpload('transcript', this)">
+                    <div class="upload-icon-wrap" id="transcriptIcon">
+                        <span>&#128196;</span>
+                    </div>
+                    <div class="upload-label">
+                        <strong>Transcript / DegreeWorks</strong>
+                        <span>Course history &amp; degree audit</span>
+                    </div>
+                    <div class="upload-status" id="transcriptStatus"></div>
+                    <button class="upload-remove" id="transcriptRemove"
+                            onclick="removeDoc(event,'transcript')" style="display:none">&#x2715; Remove</button>
+                </div>
+
+                <!-- Resume -->
+                <div class="upload-area" id="resumeArea"
+                     onclick="document.getElementById('resumeFile').click()"
+                     ondragover="handleDragOver(event)"
+                     ondrop="handleDrop(event,'resume')">
+                    <input type="file" id="resumeFile" accept=".pdf" style="display:none"
+                           onchange="handleUpload('resume', this)">
+                    <div class="upload-icon-wrap" id="resumeIcon">
+                        <span>&#128188;</span>
+                    </div>
+                    <div class="upload-label">
+                        <strong>Resume</strong>
+                        <span>Skills, experience &amp; projects</span>
+                    </div>
+                    <div class="upload-status" id="resumeStatus"></div>
+                    <button class="upload-remove" id="resumeRemove"
+                            onclick="removeDoc(event,'resume')" style="display:none">&#x2715; Remove</button>
+                </div>
+
+            </div><!-- /upload-grid -->
+
+        </div><!-- /modal-body -->
+
+        <!-- Footer -->
+        <div class="modal-footer">
+            <button class="btn-save" onclick="saveProfile()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save Profile
+            </button>
+            <button class="btn-clear-profile" onclick="clearProfile()">Clear</button>
+        </div>
+
+    </div>
+</div>
+
+<div class="page">
+
+    <!-- Backend status banner -->
+    <div class="backend-banner" id="backendBanner">
+        <div class="backend-banner-dot" id="backendDot"></div>
+        <span id="backendMsg">AI is loading data from Morgan State... this takes about 10 seconds.</span>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         NAVBAR
+    ══════════════════════════════════════ -->
+    <header class="navbar">
+        <div class="brand">
+            <div class="brand-text">
+                <h1>MorganCS <span>Assist</span></h1>
+                <p>Morgan State University &middot; Computer Science</p>
+            </div>
+        </div>
+        <div class="navbar-actions">
+            <button class="profile-btn" id="profileNavBtn" onclick="openProfile()">My Profile</button>
+            <button class="start-btn" onclick="focusSearch()">Get Started</button>
+        </div>
+    </header>
+
+    <!-- ══════════════════════════════════════
+         HERO
+    ══════════════════════════════════════ -->
+    <section class="hero">
+        <div class="overlay"></div>
+        <div class="hero-content">
+            <div class="left-side">
+                <p class="hero-eyebrow">Welcome to MorganCS Assist</p>
+                <h1>Your AI Guide<br>for <span>CS Success</span></h1>
+                <p class="hero-subtitle">Get instant, personalized answers on courses, advising, campus resources, and academic planning — powered by real Morgan State CS data.</p>
+
+                <div class="hero-pills">
+                    <span class="hero-pill"><span class="pill-dot"></span>3 Specialized AI Agents</span>
+                    <span class="hero-pill"><span class="pill-dot"></span>Official Morgan State Data</span>
+                    <span class="hero-pill"><span class="pill-dot"></span>Personalized Responses</span>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" id="heroInput" placeholder="Ask anything about your CS program..." onkeydown="if(event.key==='Enter') sendFromHero()">
+                    <button onclick="sendFromHero()" id="askBtn">Ask AI</button>
+                </div>
+            </div>
+            <div class="right-side">
+                <div class="message-box" id="heroBubble">
+                    <div class="message-box-label">&#127775; MorganCS AI</div>
+                    <p id="heroBubbleText">Hello! I can help with course advising, CS concepts, tutoring resources, faculty info, and more. What do you need?</p>
+                    <div class="thinking" id="thinkingDots">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+                <img src="images/robot.png" alt="AI Assistant" class="robot">
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+         CHAT WINDOW
+    ══════════════════════════════════════ -->
+    <section class="chat-section" id="chatSection">
+        <div class="chat-window">
+            <!-- Topbar -->
+            <div class="chat-topbar">
+                <div class="chat-topbar-left">
+                    <div class="chat-avatar">M</div>
+                    <div class="chat-status-wrap">
+                        <div class="chat-status-row">
+                            <div class="chat-dot"></div>
+                            <span class="chat-topbar-title">MorganCS AI Assistant</span>
+                        </div>
+                        <div class="chat-topbar-sub">Groq &middot; Llama 3.3 &middot; Morgan State Official Data</div>
+                    </div>
+                </div>
+                <div class="chat-topbar-right">
+                    <span class="agent-badge" id="agentBadge"></span>
+                    <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
+                </div>
+            </div>
+
+            <!-- Profile banner -->
+            <div class="profile-banner" id="profileBanner">
+                <span class="profile-banner-text">Personalized for <span id="bannerName"></span> &middot; <span id="bannerYear"></span></span>
+                <span class="profile-edit-link" onclick="openProfile()">Edit profile</span>
+            </div>
+
+            <!-- Messages -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-welcome" id="chatWelcome">
+                    <div class="chat-welcome-icon">&#127891;</div>
+                    <h3>Ready to help you succeed</h3>
+                    <p>Ask me about degree requirements, CS concepts, tutoring, faculty, the academic calendar, or anything else about Morgan State CS.</p>
+                </div>
+            </div>
+
+            <!-- Chat input bar -->
+            <div class="chat-input-bar">
+                <input type="text" id="chatInput"
+                       placeholder="Ask a follow-up question..."
+                       onkeydown="if(event.key==='Enter') sendFromChat()">
+                <button class="chat-send-btn" id="chatSendBtn" onclick="sendFromChat()" title="Send">&#10148;</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+         TOPICS
+    ══════════════════════════════════════ -->
+    <section class="topics">
+        <div class="topics-header">
+            <h2>Popular <span>Help Topics</span></h2>
+            <p>Click any card to instantly start a conversation</p>
+        </div>
+        <div class="card-container">
+            <div class="card" onclick="ask('What courses do you recommend for a freshman CS student at Morgan State?')">
+                <img src="images/course.png" alt="Course">
+                <h3>Course<br>Recommendations</h3>
+            </div>
+            <div class="card" onclick="ask('What career paths are available with a CS degree from Morgan State?')">
+                <img src="images/carrier.png" alt="Career">
+                <h3>Career<br>Guidance</h3>
+            </div>
+            <div class="card" onclick="ask('Where can I find tutoring services for CS courses at Morgan State?')">
+                <img src="images/tutoring.png" alt="Tutoring">
+                <h3>Tutoring<br>Resources</h3>
+            </div>
+            <div class="card" onclick="ask('How do I plan my academic schedule to graduate on time from the CS program?')">
+                <img src="images/academic.png" alt="Academic">
+                <h3>Academic<br>Planning</h3>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+         QUICK RESOURCES
+    ══════════════════════════════════════ -->
+    <section class="quick-resources">
+        <div class="topics-header">
+            <h2>Official <span>Morgan State</span> Resources</h2>
+            <p>Direct links to the pages you need most</p>
+        </div>
+        <div class="resource-links">
+            <a class="resource-link" href="https://www.morgan.edu/tutoring" target="_blank" rel="noopener noreferrer">
+                <div class="resource-icon">&#127891;</div>
+                <div class="resource-info">
+                    <span class="resource-title">Tutoring Services</span>
+                    <span class="resource-url">morgan.edu/tutoring</span>
+                </div>
+                <span class="resource-arrow">&#8599;</span>
+            </a>
+            <a class="resource-link" href="https://www.morgan.edu/computer-science/faculty-and-staff" target="_blank" rel="noopener noreferrer">
+                <div class="resource-icon">&#128104;&#8205;&#128187;</div>
+                <div class="resource-info">
+                    <span class="resource-title">CS Faculty &amp; Staff</span>
+                    <span class="resource-url">morgan.edu/computer-science/faculty-and-staff</span>
+                </div>
+                <span class="resource-arrow">&#8599;</span>
+            </a>
+            <a class="resource-link" href="https://www.morgan.edu/academic-calendar" target="_blank" rel="noopener noreferrer">
+                <div class="resource-icon">&#128197;</div>
+                <div class="resource-info">
+                    <span class="resource-title">Academic Calendar</span>
+                    <span class="resource-url">morgan.edu/academic-calendar</span>
+                </div>
+                <span class="resource-arrow">&#8599;</span>
+            </a>
+        </div>
+    </section>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  STATE — declared first to avoid temporal dead zone
+// ══════════════════════════════════════════════════════
+const userId    = 'user-' + Math.random().toString(36).substr(2, 9);
+let chatStarted = false;
+let chatHistory = [];
+let isSending   = false;
+
+// ══════════════════════════════════════════════════════
+//  MARKDOWN RENDERER
+// ══════════════════════════════════════════════════════
+function escHtml(t) {
+    return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function inlineMd(text) {
+    return text
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+function renderMarkdown(raw) {
+    const lines = raw.split('\n');
+    let html = '', inPre = false, inUL = false, inOL = false;
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.trim().startsWith('```')) {
+            if (inPre) { html += '</code></pre>'; inPre = false; }
+            else { if (inUL){html+='</ul>';inUL=false;} if(inOL){html+='</ol>';inOL=false;} html += '<pre><code>'; inPre = true; }
+            continue;
+        }
+        if (inPre) { html += escHtml(line) + '\n'; continue; }
+        const isUL = /^[\-\*] /.test(line), isOL = /^\d+\. /.test(line);
+        if (inUL && !isUL) { html += '</ul>'; inUL = false; }
+        if (inOL && !isOL) { html += '</ol>'; inOL = false; }
+        if (isUL) { if(!inUL){html+='<ul>';inUL=true;} html += '<li>' + inlineMd(line.replace(/^[\-\*] /,'')) + '</li>'; }
+        else if (isOL) { if(!inOL){html+='<ol>';inOL=true;} html += '<li>' + inlineMd(line.replace(/^\d+\. /,'')) + '</li>'; }
+        else if (!line.trim()) { html += '<br>'; }
+        else { html += '<p>' + inlineMd(line) + '</p>'; }
+    }
+    if (inUL) html += '</ul>';
+    if (inOL) html += '</ol>';
+    if (inPre) html += '</code></pre>';
+    return html;
+}
+
+// ══════════════════════════════════════════════════════
+//  BACKEND HEALTH CHECK
+// ══════════════════════════════════════════════════════
+async function checkBackend() {
+    const banner = document.getElementById('backendBanner');
+    const dot    = document.getElementById('backendDot');
+    const msg    = document.getElementById('backendMsg');
+    try {
+        const res = await fetch('/api/health');
+        if (res.ok) {
+            dot.classList.add('green');
+            msg.textContent = 'All AI agents are ready.';
+            setTimeout(() => banner.classList.add('hidden'), 3000);
+            return;
+        }
+    } catch (_) {}
+    // Not ready yet — retry in 3 seconds
+    setTimeout(checkBackend, 3000);
+}
+
+checkBackend();
+
+// ══════════════════════════════════════════════════════
+//  PROFILE
+// ══════════════════════════════════════════════════════
+function loadProfile() {
+    try {
+        const profile = JSON.parse(localStorage.getItem('morgancs_profile')) || {};
+        // Attach uploaded document text so it goes to the agent
+        const transcript = localStorage.getItem('morgancs_transcript');
+        const resume     = localStorage.getItem('morgancs_resume');
+        if (transcript) profile.transcriptText = JSON.parse(transcript).text;
+        if (resume)     profile.resumeText     = JSON.parse(resume).text;
+        return Object.keys(profile).length > 0 ? profile : null;
+    } catch { return null; }
+}
+
+function openProfile() {
+    const p = loadProfile();
+    if (p) {
+        document.getElementById('pName').value    = p.name || '';
+        document.getElementById('pYear').value    = p.year || '';
+        document.getElementById('pGpa').value     = p.gpa  || '';
+        document.getElementById('pCourses').value = p.coursesTaken || '';
+        document.getElementById('pGoals').value   = p.goals || '';
+        document.querySelectorAll('.checkbox-group input[type=checkbox]').forEach(cb => {
+            cb.checked = (p.helpNeeded || '').includes(cb.value);
+        });
+    }
+    document.getElementById('profileModal').classList.add('open');
+    restoreUploadUI();
+}
+
+function closeProfile() { document.getElementById('profileModal').classList.remove('open'); }
+
+function saveProfile() {
+    const checked = [...document.querySelectorAll('.checkbox-group input:checked')].map(c => c.value);
+    const profile = {
+        name:         document.getElementById('pName').value.trim(),
+        year:         document.getElementById('pYear').value,
+        gpa:          document.getElementById('pGpa').value,
+        coursesTaken: document.getElementById('pCourses').value.trim(),
+        helpNeeded:   checked.join(', '),
+        goals:        document.getElementById('pGoals').value.trim(),
+    };
+    localStorage.setItem('morgancs_profile', JSON.stringify(profile));
+    updateProfileUI(profile);
+    closeProfile();
+}
+
+function clearProfile() {
+    localStorage.removeItem('morgancs_profile');
+    localStorage.removeItem('morgancs_transcript');
+    localStorage.removeItem('morgancs_resume');
+    ['pName','pYear','pGpa','pCourses','pGoals'].forEach(id => document.getElementById(id).value = '');
+    document.querySelectorAll('.checkbox-group input').forEach(c => c.checked = false);
+    ['transcript','resume'].forEach(t => removeDoc({ stopPropagation: ()=>{} }, t));
+    updateProfileUI(null);
+    closeProfile();
+}
+
+function updateProfileUI(profile) {
+    const btn    = document.getElementById('profileNavBtn');
+    const banner = document.getElementById('profileBanner');
+    if (profile && (profile.name || profile.year)) {
+        btn.classList.add('has-profile');
+        btn.textContent = profile.name || profile.year;
+        document.getElementById('bannerName').textContent = profile.name || 'Student';
+        document.getElementById('bannerYear').textContent = profile.year || '';
+        if (chatStarted) banner.classList.add('visible');
+    } else {
+        btn.classList.remove('has-profile');
+        btn.textContent = 'My Profile';
+        banner.classList.remove('visible');
+    }
+}
+
+updateProfileUI(loadProfile());
+document.getElementById('profileModal').addEventListener('click', function(e) {
+    if (e.target === this) closeProfile();
+});
+
+// ══════════════════════════════════════════════════════
+//  DOCUMENT UPLOADS (transcript + resume)
+// ══════════════════════════════════════════════════════
+function handleDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+}
+
+function handleDrop(e, type) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    processUpload(type, file);
+}
+
+function handleUpload(type, input) {
+    const file = input.files[0];
+    if (!file) return;
+    processUpload(type, file);
+    input.value = ''; // reset so same file can be re-uploaded
+}
+
+async function processUpload(type, file) {
+    const statusEl = document.getElementById(type + 'Status');
+    const areaEl   = document.getElementById(type + 'Area');
+    const iconEl   = document.getElementById(type + 'Icon');
+    const removeEl = document.getElementById(type + 'Remove');
+
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+        setUploadStatus(statusEl, 'error', '&#9888; Only PDF files are supported.');
+        return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+        setUploadStatus(statusEl, 'error', '&#9888; File too large (max 5 MB).');
+        return;
+    }
+
+    setUploadStatus(statusEl, 'loading', '&#8635; Reading PDF...');
+    areaEl.classList.add('uploading');
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+
+    try {
+        const res  = await fetch('/api/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.success) {
+            localStorage.setItem('morgancs_' + type, JSON.stringify({
+                filename: data.filename,
+                text:     data.text,
+                chars:    data.chars,
+            }));
+            areaEl.classList.remove('uploading');
+            areaEl.classList.add('uploaded');
+            iconEl.innerHTML = '<span>&#10003;</span>';
+            removeEl.style.display = 'inline-flex';
+            const truncNote = data.truncated ? ' (truncated)' : '';
+            setUploadStatus(statusEl, 'success',
+                '&#10003; ' + data.filename + ' &middot; ' + (data.chars / 1000).toFixed(1) + 'k chars' + truncNote);
+        } else {
+            areaEl.classList.remove('uploading');
+            setUploadStatus(statusEl, 'error', '&#9888; ' + data.error);
+        }
+    } catch (err) {
+        areaEl.classList.remove('uploading');
+        setUploadStatus(statusEl, 'error', '&#9888; Upload failed. Is Flask running?');
+    }
+}
+
+function setUploadStatus(el, type, html) {
+    el.innerHTML   = html;
+    el.className   = 'upload-status ' + type;
+}
+
+function removeDoc(e, type) {
+    e.stopPropagation();
+    localStorage.removeItem('morgancs_' + type);
+    const areaEl   = document.getElementById(type + 'Area');
+    const iconEl   = document.getElementById(type + 'Icon');
+    const statusEl = document.getElementById(type + 'Status');
+    const removeEl = document.getElementById(type + 'Remove');
+    areaEl.classList.remove('uploaded', 'uploading');
+    iconEl.innerHTML = type === 'transcript' ? '<span>&#128196;</span>' : '<span>&#128188;</span>';
+    statusEl.innerHTML = '';
+    statusEl.className = 'upload-status';
+    removeEl.style.display = 'none';
+}
+
+// Restore upload state from localStorage on modal open
+function restoreUploadUI() {
+    ['transcript', 'resume'].forEach(type => {
+        const saved = localStorage.getItem('morgancs_' + type);
+        if (!saved) return;
+        try {
+            const d      = JSON.parse(saved);
+            const areaEl = document.getElementById(type + 'Area');
+            const iconEl = document.getElementById(type + 'Icon');
+            const statusEl = document.getElementById(type + 'Status');
+            const removeEl = document.getElementById(type + 'Remove');
+            areaEl.classList.add('uploaded');
+            iconEl.innerHTML = '<span>&#10003;</span>';
+            removeEl.style.display = 'inline-flex';
+            setUploadStatus(statusEl, 'success',
+                '&#10003; ' + d.filename + ' &middot; ' + (d.chars / 1000).toFixed(1) + 'k chars');
+        } catch (_) {}
+    });
+}
+
+// ══════════════════════════════════════════════════════
+//  CHAT STATE + PERSISTENCE
+// ══════════════════════════════════════════════════════
+function getTime() {
+    return new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function saveChatToStorage() {
+    localStorage.setItem('morgancs_chat_history', JSON.stringify(chatHistory));
+    localStorage.setItem('morgancs_chat_html', document.getElementById('chatMessages').innerHTML);
+}
+
+function restoreChat() {
+    try {
+        const savedHistory = localStorage.getItem('morgancs_chat_history');
+        const savedHtml    = localStorage.getItem('morgancs_chat_html');
+        if (!savedHistory || !savedHtml) return;
+        const parsed = JSON.parse(savedHistory);
+        if (!parsed.length) return;
+        chatHistory  = parsed;
+        chatStarted  = true;
+        document.getElementById('chatMessages').innerHTML = savedHtml;
+        document.getElementById('chatSection').classList.add('visible');
+        document.getElementById('thinkingDots').style.display = 'none';
+        const profile = loadProfile();
+        if (profile && (profile.name || profile.year)) {
+            document.getElementById('profileBanner').classList.add('visible');
+            updateProfileUI(profile);
+        }
+        // Scroll to bottom of restored chat
+        const box = document.getElementById('chatMessages');
+        box.scrollTop = box.scrollHeight;
+    } catch (_) {}
+}
+
+restoreChat();
+
+function focusSearch() {
+    document.getElementById('heroInput').focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function ask(question) {
+    document.getElementById('heroInput').value = question;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(sendFromHero, 300);
+}
+
+function clearChat() {
+    chatHistory = [];
+    localStorage.removeItem('morgancs_chat_history');
+    localStorage.removeItem('morgancs_chat_html');
+    document.getElementById('chatMessages').innerHTML = `
+        <div class="chat-welcome" id="chatWelcome">
+            <div class="chat-welcome-icon">&#127891;</div>
+            <h3>Ready to help you succeed</h3>
+            <p>Ask me about degree requirements, CS concepts, tutoring, faculty, the academic calendar, or anything else about Morgan State CS.</p>
+        </div>`;
+    document.getElementById('agentBadge').classList.remove('visible');
+}
+
+function sendFromHero() {
+    const input = document.getElementById('heroInput');
+    const text  = input.value.trim();
+    if (!text || isSending) return;
+    input.value = '';
+    performSend(text);
+}
+
+function sendFromChat() {
+    const input = document.getElementById('chatInput');
+    const text  = input.value.trim();
+    if (!text || isSending) return;
+    input.value = '';
+    performSend(text);
+}
+
+// ══════════════════════════════════════════════════════
+//  MESSAGES
+// ══════════════════════════════════════════════════════
+function appendMessage(html, isUser, agentLabel, timestamp) {
+    const welcome = document.getElementById('chatWelcome');
+    if (welcome) welcome.remove();
+
+    const box  = document.getElementById('chatMessages');
+    const wrap = document.createElement('div');
+    wrap.className = 'msg ' + (isUser ? 'user' : 'bot');
+
+    const profile  = loadProfile();
+    const initials = isUser && profile && profile.name
+        ? profile.name.charAt(0).toUpperCase()
+        : (isUser ? 'U' : 'M');
+
+    const av = document.createElement('div');
+    av.className = 'av'; av.textContent = initials;
+
+    const body = document.createElement('div');
+    body.className = 'msg-body';
+
+    const bub = document.createElement('div');
+    bub.className = 'bubble';
+    if (isUser) { bub.textContent = html; } else { bub.innerHTML = html; }
+    body.appendChild(bub);
+
+    if (!isUser) {
+        const meta = document.createElement('div');
+        meta.className = 'msg-meta';
+        if (agentLabel) { const ag = document.createElement('span'); ag.className = 'msg-agent'; ag.textContent = agentLabel; meta.appendChild(ag); }
+        if (timestamp)  { const ts = document.createElement('span'); ts.className = 'msg-time';  ts.textContent = timestamp;  meta.appendChild(ts); }
+        body.appendChild(meta);
+    }
+
+    wrap.appendChild(av); wrap.appendChild(body);
+    box.appendChild(wrap);
+    box.scrollTop = box.scrollHeight;
+}
+
+function showTyping() {
+    const welcome = document.getElementById('chatWelcome');
+    if (welcome) welcome.remove();
+    const box  = document.getElementById('chatMessages');
+    const wrap = document.createElement('div');
+    wrap.className = 'msg bot'; wrap.id = 'typingMsg';
+    const av = document.createElement('div'); av.className = 'av'; av.textContent = 'M';
+    const body = document.createElement('div'); body.className = 'msg-body';
+    const tw = document.createElement('div'); tw.className = 'typing-wrap';
+    tw.innerHTML = '<div class="tdot"></div><div class="tdot"></div><div class="tdot"></div>';
+    body.appendChild(tw); wrap.appendChild(av); wrap.appendChild(body);
+    box.appendChild(wrap); box.scrollTop = box.scrollHeight;
+}
+
+function hideTyping() { const el = document.getElementById('typingMsg'); if (el) el.remove(); }
+
+// ══════════════════════════════════════════════════════
+//  CORE SEND
+// ══════════════════════════════════════════════════════
+async function performSend(text) {
+    if (isSending) return;
+    isSending = true;
+
+    const heroBtn = document.getElementById('askBtn');
+    const chatBtn = document.getElementById('chatSendBtn');
+    heroBtn.disabled = chatBtn.disabled = true;
+    heroBtn.textContent = '...';
+
+    if (!chatStarted) {
+        chatStarted = true;
+        document.getElementById('chatSection').classList.add('visible');
+        document.getElementById('thinkingDots').style.display = 'none';
+        const profile = loadProfile();
+        if (profile && (profile.name || profile.year)) {
+            document.getElementById('profileBanner').classList.add('visible');
+        }
+    }
+
+    appendMessage(text, true, null, null);
+    showTyping();
+    document.getElementById('chatSection').scrollIntoView({ behavior: 'smooth' });
+    chatHistory.push({ role: 'user', content: text });
+
+    try {
+        const profile = loadProfile();
+        const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text, userId, history: chatHistory.slice(-6), profile }),
+        });
+        const data = await res.json();
+        hideTyping();
+
+        if (data.reply) {
+            const ts     = getTime();
+            const mdHtml = renderMarkdown(data.reply);
+            appendMessage(mdHtml, false, data.agent || 'MorganCS AI', ts);
+            chatHistory.push({ role: 'assistant', content: data.reply });
+            saveChatToStorage();
+
+            if (data.agent) {
+                const badge = document.getElementById('agentBadge');
+                badge.textContent = data.agent;
+                badge.classList.add('visible');
+            }
+
+            const preview = data.reply.replace(/\*\*/g,'').replace(/\*/g,'').replace(/`/g,'');
+            document.getElementById('heroBubbleText').textContent =
+                preview.length > 90 ? preview.substring(0, 90) + '...' : preview;
+
+        } else if (data.error) {
+            appendMessage('<p>&#9888; ' + escHtml(data.error) + '</p>', false, 'System', getTime());
+            chatHistory.pop();
+        }
+    } catch (err) {
+        hideTyping();
+        appendMessage('<p>&#9888; Could not reach the server. Make sure Flask is running on port 5001.</p>', false, 'System', getTime());
+        chatHistory.pop();
+    }
+
+    heroBtn.disabled = chatBtn.disabled = false;
+    heroBtn.textContent = 'Ask AI';
+    isSending = false;
+    document.getElementById('chatInput').focus();
+}
+</script>
+
+</body>
+</html>
