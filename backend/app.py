@@ -20,12 +20,19 @@ def static_files(filename):
 
 @flask_app.route("/api/chat", methods=["POST"])
 def chat():
-    data = request.get_json()
+    data    = request.get_json()
     message = data.get("message", "")
     user_id = data.get("userId", "test-user")
+    history = data.get("history", [])      # list of {role, content}
+    profile = data.get("profile", None)    # student profile dict
 
     try:
-        result = agent_app.query(message=message, user_id=user_id)
+        result = agent_app.query(
+            message=message,
+            user_id=user_id,
+            history=history,
+            profile=profile,
+        )
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
