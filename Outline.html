@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MorganCS Assist</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <div class="page">
@@ -65,22 +67,22 @@
             <h2>Popular Help Topics</h2>
 
             <div class="card-container">
-                <div class="card">
+                <div class="card" onclick="window.location.href='course_recommendation.html'">
                     <img src="images/course.png" alt="Course">
                     <h3>Course<br>Recommendations</h3>
                 </div>
 
-                <div class="card">
+                <div class="card" onclick="window.location.href='career_guidance.html'">
                     <img src="images/carrier.png" alt="Career">
                     <h3>Career<br>Guidance</h3>
                 </div>
 
-                <div class="card">
+                <div class="card" onclick="window.location.href='tutoring_resources.html'">
                     <img src="images/tutoring.png" alt="Tutoring">
                     <h3>Tutoring<br>Resources</h3>
                 </div>
 
-                <div class="card">
+                <div class="card" onclick="window.location.href='academic_planning.html'">
                     <img src="images/academic.png" alt="Academic">
                     <h3>Academic<br>Planning</h3>
                 </div>
@@ -89,5 +91,23 @@
 
     </div>
 
+    <script>
+        document.querySelector('.search-box button').addEventListener('click', function () {
+            const query = document.querySelector('.search-box input').value.toLowerCase().trim();
+            if (query.includes('job') || query.includes('career') || query.includes('future') || query.includes('opportunity') || query.includes('employment')) {
+                window.location.href = 'career_guidance.html';
+            } else if (query.includes('course') || query.includes('recommendation') || query.includes('class')) {
+                window.location.href = 'course_recommendation.html';
+            } else if (query.includes('tutoring') || query.includes('resources') || query.includes('help') || query.includes('tutor')) {
+                window.location.href = 'tutoring_resources.html';
+            } else if (query.includes('academic') || query.includes('planning') || query.includes('schedule') || query.includes('plan')) {
+                window.location.href = 'academic_planning.html';
+            } else {
+                alert('Please ask about courses, careers, tutoring, or academic planning.');
+            }
+        });
+    </script>
+
 </body>
+
 </html>
